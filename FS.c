@@ -16,9 +16,9 @@
 #define block_size 1024
 
 typedef struct superblock {
-	char datablocks[block_size*100];		//total number of data blocks
+	char datablocks[block_size*100];	 //total number of data blocks
 	char data_bitmap[105];      			//array of data block numbers that are available
-	char inode_bitmap[105];   				//array of inode numbers that are available
+	char inode_bitmap[105];   			//array of inode numbers that are available
 } superblock;
 
 typedef struct inode {
@@ -27,6 +27,7 @@ typedef struct inode {
 	int blocks;                    //==number of blocks the particular inode points to
 	//int link;                    //==number of links
 	int size;                      //==size of file/directory
+
 } inode;
 
 typedef struct filetype {
@@ -724,6 +725,7 @@ int main( int argc, char *argv[] ) {
 		fread(&spblock,sizeof(superblock),1,fd1);
 	}
 	else{
+		printf("new\n");
 		initialize_superblock();
 		initialize_root_directory();
 	}
