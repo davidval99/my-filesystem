@@ -578,6 +578,20 @@ int mytruncate(const char *path, off_t size) {
 	return 0;
 }
 
+/*int myopendir(const char* path, struct fuse_file_info* fi){
+
+	printf("Open DIR %s\n", path);
+
+    struct node* search = NULL;
+	findNodePath(spblock->root, &search, path);
+
+    if (!search->dir) return -ENOTDIR;
+    fi->fh = (uint64_t) (int)path;
+
+    return 0;
+
+}*/
+
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 
 	printf("WRITING\n");
@@ -621,19 +635,60 @@ int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct
 	return strlen(buf);
 }
 
-static struct fuse_operations operations =
+int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi){
+
+	printf("Syncing \n");
+
+	(void) path;
+	(void) isdatasync;
+	(void) fi;
+
+	return 0;
+}
+
+static int myflush(struct superblock * block, int offset, int len)
 {
-	.mkdir=mymkdir,
-	.getattr=mygetattr,
-	.readdir=myreaddir,
-	.rmdir=myrmdir,
-	.open=myopen,
-	.read=myread,
-	.write=mywrite,
-	.create=mycreate,
-	.rename=myrename,
-	.unlink=myrm,
-};
+    return 0;
+}
+
+/*void encode_inode(struct inode **root){
+
+    struct inode = *root;
+
+    while(spblock != NULL){
+
+      char* string = spblock->datablocks;
+      size_t length = strlen(string);
+      size_t i = 0;
+      for (; i < length; i++) {
+          //printf("%c", string[i]);
+          string[i] = string[i] - spblock->key;
+      }
+      strcpy(spblock->datablocks, string );
+      //tmp_block = tmp_block->next_block;
+    }
+
+}
+
+void decode_inode(struct inode **root){
+
+    struct inode *tmp_block = *root;
+
+    while(tmp_block != NULL){
+
+      char* string = spblock->datablocks;
+      size_t length = strlen(string);
+      size_t i = 0;
+      for (; i < length; i++) {
+          //printf("%c", string[i]);    // Print each character of the string.
+          string[i] = string[i] + spblock->key;
+      }
+      strcpy(spblock->datablocks, string );
+      //tmp_block = tmp_block->next_block;
+    }
+
+}*/
+
 
 int main( int argc, char *argv[] ) {
 	FILE *fd = fopen("file_structure.bin", "rb");
@@ -661,6 +716,7 @@ int main( int argc, char *argv[] ) {
 		fread(&spblock,sizeof(superblock),1,fd1);
 	}
 	else{
+
 		initialize_superblock();
 		initialize_root_directory();
 	}

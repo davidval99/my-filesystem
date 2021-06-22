@@ -10,13 +10,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-
 // gcc FS.c -o FS `pkg-config fuse --cflags --libs`
 // ./ FS - f Desktop / OS / mountpoint4
-
 #define block_size 1024
 
 typedef struct superblock {
+	unsigned long int key;
 	char datablocks[block_size*100];		//total number of data blocks
 	char data_bitmap[105];      			//array of data block numbers that are available
 	char inode_bitmap[105];   				//array of inode numbers that are available
@@ -54,25 +53,13 @@ typedef struct filetype {
 	int number;
 	int blocks;
 
-}
-filetype;
-superblock spblock;
-filetype * root;
-filetype file_array[50];
+} filetype;
 
-////////////////////////////////////////////////////////////////////////////////
 
-void initialize_superblock();
-void tree_to_array(filetype * queue, int * front, int * rear, int * index);
 int save_contents();
-void initialize_root_directory();
-filetype * filetype_from_path(char * path);
 int find_free_inode();
 int find_free_db();
-void add_child(filetype * parent, filetype * child);
-static int mymkdir(const char *path, mode_t mode);
 int myreaddir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi );
-static int mygetattr(const char *path, struct stat *statit);
 int myrmdir(const char * path);
 int myrm(const char * path);
 int mycreate(const char * path, mode_t mode, struct fuse_file_info *fi);
@@ -82,3 +69,34 @@ int myaccess(const char * path, int mask);
 int myrename(const char* from, const char* to);
 int mytruncate(const char *path, off_t size);
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
+int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi);
+void encode_inode(struct inode **root);
+void decode_inode(struct inode **root);
+void add_child(filetype * parent, filetype * child);
+void initialize_root_directory();
+void initialize_superblock();
+void tree_to_array(filetype * queue, int * front, int * rear, int * index);
+filetype * filetype_from_path(char * path);
+static int mygetattr(const char *path, struct stat *statit);
+static int mymkdir(const char *path, mode_t mode);
+
+superblock spblock;
+filetype * root;
+filetype file_array[50];
+
+static struct fuse_operations operations = {
+	.mkdir=mymkdir,
+	.getattr=mygetattr,
+	.readdir=myreaddir,
+	.rmdir=myrmdir,
+	.open=myopen,
+	.read=myread,
+	.write=mywrite,
+	.create=mycreate,
+	.rename=myrename,
+	.unlink=myrm,
+	.fsync=myfsync,
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
