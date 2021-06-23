@@ -55,7 +55,7 @@ void tree_to_array(filetype * queue, int * front, int * rear, int * index){
 }
 
 int save_contents(){
-	printf("saving...\n");
+	printf("SAVING\n");
 	filetype * queue = malloc(sizeof(filetype)*60);
 	int front = 0;
 	int rear = 0;
@@ -63,20 +63,20 @@ int save_contents(){
 	int index = 0;
 	tree_to_array(queue, &front, &rear, &index);
 
-	//for(int i = 0; i < 31; i++){
-	//	printf("%d", file_array[i].valid);
-	//}
+	for(int i = 0; i < 31; i++){
+		printf("%d", file_array[i].valid);
+	}
 
-	FILE * fd = fopen("fs_persitance.bin", "wb");
+	FILE * fd = fopen("file_structure.bin", "wb");
 
-	FILE * fd1 = fopen("superblock_persistance.bin", "wb");
+	FILE * fd1 = fopen("super.bin", "wb");
 
 	fwrite(file_array, sizeof(filetype)*31, 1, fd);
 	fwrite(&spblock,sizeof(superblock),1,fd1);
 
 	fclose(fd);
 	fclose(fd1);
-	printf("changes saved!\n");
+
 	printf("\n");
 }
 
@@ -268,7 +268,7 @@ static int mymkdir(const char *path, mode_t mode) {
 }
 
 int myreaddir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi ){
-	printf("reading...\n");
+	printf("READDIR\n");
 
 	filler(buffer, ".", NULL, 0 );
 	filler(buffer, "..", NULL, 0 );
@@ -298,7 +298,7 @@ static int mygetattr(const char *path, struct stat *statit) {
 
 	strcpy(pathname, path);
 
-	printf("getattr ->  %s\n", pathname);
+	printf("GETATTR %s\n", pathname);
 
 	filetype * file_node = filetype_from_path(pathname);
 	if(file_node == NULL)
@@ -318,8 +318,6 @@ static int mygetattr(const char *path, struct stat *statit) {
 }
 
 int myrmdir(const char * path){
-
-	//Deletes non empty directories
 
 	char * pathname = malloc(strlen(path)+2);
 	strcpy(pathname, path);
@@ -373,11 +371,6 @@ int myrmdir(const char * path){
 }
 
 int myunlink(const char * path){
-<<<<<<< HEAD
-=======
-
-	//Deletes both
->>>>>>> 0806a40265e34a0bfcc7c48dc181700beb02b8e2
 
 	char * pathname = malloc(strlen(path)+2);
 	strcpy(pathname, path);
@@ -432,7 +425,7 @@ int myunlink(const char * path){
 
 int mycreate(const char * path, mode_t mode, struct fuse_file_info *fi) {
 
-	printf("creating file...\n");
+	printf("CREATEFILE\n");
 
 	int index = find_free_inode();
 
@@ -551,8 +544,8 @@ int myaccess(const char * path, int mask){
 }
 
 int myrename(const char* from, const char* to) {
-	printf("renaming: %s\n", from);
-	printf("to: %s\n", to);
+	printf("RENAME: %s\n", from);
+	printf("RENAME: %s\n", to);
 
 	char * pathname = malloc(strlen(from)+2);
 	strcpy(pathname, from);
@@ -587,7 +580,6 @@ int myrename(const char* from, const char* to) {
 	return 0;
 }
 
-<<<<<<< HEAD
 int myopendir(const char* path, struct fuse_file_info* fi){
 
 	printf("Open DIR %s\n", path);
@@ -601,7 +593,7 @@ int myopendir(const char* path, struct fuse_file_info* fi){
 
 }
 
-int function_statfs(const char* path, struct statvfs* stbuf){
+int mystatfs(const char* path, struct statvfs* stbuf){
 
 	printf("Stat of the filesystem \n");
 
@@ -623,25 +615,10 @@ int function_statfs(const char* path, struct statvfs* stbuf){
 
 	return 0;
 }
-=======
-/*int myopendir(const char* path, struct fuse_file_info* fi){
-
-	printf("Open DIR %s\n", path);
-
-    struct node* search = NULL;
-	findNodePath(spblock->root, &search, path);
-
-    if (!search->dir) return -ENOTDIR;
-    fi->fh = (uint64_t) (int)path;
-
-    return 0;
-
-}*/
->>>>>>> 0806a40265e34a0bfcc7c48dc181700beb02b8e2
 
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 
-	printf("writing...\n");
+	printf("WRITING\n");
 
 	char * pathname = malloc(sizeof(path)+1);
 	strcpy(pathname, path);
@@ -693,7 +670,6 @@ int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi){
 	return 0;
 }
 
-<<<<<<< HEAD
 static int myflush(struct superblock * block, int offset, int len) {
     return 0;
 }
@@ -708,40 +684,18 @@ void encode_inode(const char *path){
     while(file != NULL){
 
       char* string = file->blocks;
-=======
-static int myflush(struct superblock * block, int offset, int len)
-{
-    return 0;
-}
-
-/*void encode_inode(struct inode **root){
-
-    struct inode = *root;
-
-    while(spblock != NULL){
-
-      char* string = spblock->datablocks;
->>>>>>> 0806a40265e34a0bfcc7c48dc181700beb02b8e2
       size_t length = strlen(string);
       size_t i = 0;
       for (; i < length; i++) {
           //printf("%c", string[i]);
-<<<<<<< HEAD
           string[i] = string[i] - spblock.key;
       }
       strcpy(file->blocks, string );
      	(file->blocks)++;
-=======
-          string[i] = string[i] - spblock->key;
-      }
-      strcpy(spblock->datablocks, string );
-      //tmp_block = tmp_block->next_block;
->>>>>>> 0806a40265e34a0bfcc7c48dc181700beb02b8e2
     }
 
 }
 
-<<<<<<< HEAD
 void decode_inode(const char *path){
 
 	char * pathname = malloc(sizeof(path)+1);
@@ -763,32 +717,11 @@ void decode_inode(const char *path){
 		}
 
 }
-=======
-void decode_inode(struct inode **root){
-
-    struct inode *tmp_block = *root;
-
-    while(tmp_block != NULL){
-
-      char* string = spblock->datablocks;
-      size_t length = strlen(string);
-      size_t i = 0;
-      for (; i < length; i++) {
-          //printf("%c", string[i]);    // Print each character of the string.
-          string[i] = string[i] + spblock->key;
-      }
-      strcpy(spblock->datablocks, string );
-      //tmp_block = tmp_block->next_block;
-    }
-
-}*/
-
->>>>>>> 0806a40265e34a0bfcc7c48dc181700beb02b8e2
 
 int main( int argc, char *argv[] ) {
-	FILE *fd = fopen("fs_persitance.bin", "rb");
+	FILE *fd = fopen("file_structure.bin", "rb");
 	if(fd){
-	printf("Loading filesystem...\n");
+	printf("LOADING\n");
 	fread(&file_array, sizeof(filetype)*31, 1, fd);
 
 	int child_startindex = 1;
@@ -807,7 +740,7 @@ int main( int argc, char *argv[] ) {
 
 		root = &file_array[0];
 
-		FILE *fd1 = fopen("superblock_persistance.bin", "rb");
+		FILE *fd1 = fopen("super.bin", "rb");
 		fread(&spblock,sizeof(superblock),1,fd1);
 	}
 	else{

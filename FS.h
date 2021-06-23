@@ -67,16 +67,12 @@ int myopen(const char *path, struct fuse_file_info *fi);
 int myread(const char *path, char *buf, size_t size, off_t offset,struct fuse_file_info *fi);
 int myaccess(const char * path, int mask);
 int myrename(const char* from, const char* to);
-int mytruncate(const char *path, off_t size);
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi);
-<<<<<<< HEAD
+int myopendir(const char* path, struct fuse_file_info* fi);
+int mystatfs(const char* path, struct statvfs* stbuf);
 void encode_inode(const char *path);
 void decode_inode(const char *path);
-=======
-void encode_inode(struct inode **root);
-void decode_inode(struct inode **root);
->>>>>>> 0806a40265e34a0bfcc7c48dc181700beb02b8e2
 void add_child(filetype * parent, filetype * child);
 void initialize_root_directory();
 void initialize_superblock();
@@ -100,12 +96,12 @@ static struct fuse_operations operations = {
 	.write=mywrite,
 	.create=mycreate,
 	.rename=myrename,
-<<<<<<< HEAD
-	.unlink=myrm,
-=======
 	.unlink=myunlink,
->>>>>>> 0806a40265e34a0bfcc7c48dc181700beb02b8e2
 	.fsync=myfsync,
+	.statfs=mystatfs,
+	.opendir=myopendir,
+	.access=myaccess,
+	.flush=myflush,
 };
 
 
