@@ -1,74 +1,10 @@
-#define FUSE_USE_VERSION 30
-
-#include <fuse.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <errno.h>
-
-// gcc FS.c -o FS `pkg-config fuse --cflags --libs`
-// ./ FS - f Desktop / OS / mountpoint4
-
-#define block_size 1024
-
-typedef struct superblock {
-	char datablocks[block_size*100];	 //total number of data blocks
-	char data_bitmap[105];      			//array of data block numbers that are available
-	char inode_bitmap[105];   			//array of inode numbers that are available
-} superblock;
-
-typedef struct inode {
-	int datablocks[16];            //data block number that the inode points to
-	int number;
-	int blocks;                    //==number of blocks the particular inode points to
-	//int link;                    //==number of links
-	int size;                      //==size of file/directory
-
-} inode;
-
-typedef struct filetype {
-	int valid;
-	char test[10];
-	char path[100];
-	char name[100];           //name
-	inode *inum;              //inode number
-	struct filetype ** children;
-	int num_children;
-	int num_links;
-	struct filetype * parent;
-	char type[20];                  //==file extension
-	mode_t permissions;		        // Permissions
-	uid_t user_id;		            // userid
-	gid_t group_id;		            // groupid
-	time_t a_time;                  // Access time
-	time_t m_time;                  // Modified time
-	time_t c_time;                  // Status change time
-	time_t b_time;                  // Creation time
-	off_t size;                     // Size of the node
-
-	int datablocks[16];
-	int number;
-	int blocks;
-
-} filetype;
-
-
-
-superblock spblock;
+#include "FS.h"
 
 void initialize_superblock(){
 
 	memset(spblock.data_bitmap, '0', 100*sizeof(char));
 	memset(spblock.inode_bitmap, '0', 100*sizeof(char));
 }
-
-filetype * root;
-
-filetype file_array[50];
 
 void tree_to_array(filetype * queue, int * front, int * rear, int * index){
 
@@ -120,7 +56,7 @@ void tree_to_array(filetype * queue, int * front, int * rear, int * index){
 
 
 int save_contents(){
-	printf("SAVING\n");
+	printf("saving...\n");
 	filetype * queue = malloc(sizeof(filetype)*60);
 	int front = 0;
 	int rear = 0;
@@ -128,20 +64,20 @@ int save_contents(){
 	int index = 0;
 	tree_to_array(queue, &front, &rear, &index);
 
-	for(int i = 0; i < 31; i++){
-		printf("%d", file_array[i].valid);
-	}
+	//for(int i = 0; i < 31; i++){
+	//	printf("%d", file_array[i].valid);
+	//}
 
-	FILE * fd = fopen("file_structure.bin", "wb");
+	FILE * fd = fopen("fs_persitance.bin", "wb");
 
-	FILE * fd1 = fopen("super.bin", "wb");
+	FILE * fd1 = fopen("superblock_persistance.bin", "wb");
 
 	fwrite(file_array, sizeof(filetype)*31, 1, fd);
 	fwrite(&spblock,sizeof(superblock),1,fd1);
 
 	fclose(fd);
 	fclose(fd1);
-
+	printf("changes saved!\n");
 	printf("\n");
 }
 
@@ -337,7 +273,7 @@ static int mymkdir(const char *path, mode_t mode) {
 
 
 int myreaddir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi ){
-	printf("READDIR\n");
+	printf("reading...\n");
 
 	filler(buffer, ".", NULL, 0 );
 	filler(buffer, "..", NULL, 0 );
@@ -368,7 +304,7 @@ static int mygetattr(const char *path, struct stat *statit) {
 
 	strcpy(pathname, path);
 
-	printf("GETATTR %s\n", pathname);
+	printf("getattr ->  %s\n", pathname);
 
 	filetype * file_node = filetype_from_path(pathname);
 	if(file_node == NULL)
@@ -388,6 +324,8 @@ static int mygetattr(const char *path, struct stat *statit) {
 }
 
 int myrmdir(const char * path){
+
+	//Deletes non empty directories
 
 	char * pathname = malloc(strlen(path)+2);
 	strcpy(pathname, path);
@@ -440,7 +378,9 @@ int myrmdir(const char * path){
 
 }
 
-int myrm(const char * path){
+int myunlink(const char * path){
+
+	//Deletes both
 
 	char * pathname = malloc(strlen(path)+2);
 	strcpy(pathname, path);
@@ -496,7 +436,7 @@ int myrm(const char * path){
 
 int mycreate(const char * path, mode_t mode, struct fuse_file_info *fi) {
 
-	printf("CREATEFILE\n");
+	printf("creating file...\n");
 
 	int index = find_free_inode();
 
@@ -602,8 +542,8 @@ int myaccess(const char * path, int mask){
 
 
 int myrename(const char* from, const char* to) {
-	printf("RENAME: %s\n", from);
-	printf("RENAME: %s\n", to);
+	printf("renaming: %s\n", from);
+	printf("to: %s\n", to);
 
 	char * pathname = malloc(strlen(from)+2);
 	strcpy(pathname, from);
@@ -638,13 +578,23 @@ int myrename(const char* from, const char* to) {
 	return 0;
 }
 
-int mytruncate(const char *path, off_t size) {
-	return 0;
-}
+/*int myopendir(const char* path, struct fuse_file_info* fi){
+
+	printf("Open DIR %s\n", path);
+
+    struct node* search = NULL;
+	findNodePath(spblock->root, &search, path);
+
+    if (!search->dir) return -ENOTDIR;
+    fi->fh = (uint64_t) (int)path;
+
+    return 0;
+
+}*/
 
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 
-	printf("WRITING\n");
+	printf("writing...\n");
 
 	char * pathname = malloc(sizeof(path)+1);
 	strcpy(pathname, path);
@@ -685,24 +635,65 @@ int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct
 	return strlen(buf);
 }
 
-static struct fuse_operations operations =
+int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi){
+
+	printf("Syncing \n");
+
+	(void) path;
+	(void) isdatasync;
+	(void) fi;
+
+	return 0;
+}
+
+static int myflush(struct superblock * block, int offset, int len)
 {
-	.mkdir=mymkdir,
-	.getattr=mygetattr,
-	.readdir=myreaddir,
-	.rmdir=myrmdir,
-	.open=myopen,
-	.read=myread,
-	.write=mywrite,
-	.create=mycreate,
-	.rename=myrename,
-	.unlink=myrm,
-};
+    return 0;
+}
+
+/*void encode_inode(struct inode **root){
+
+    struct inode = *root;
+
+    while(spblock != NULL){
+
+      char* string = spblock->datablocks;
+      size_t length = strlen(string);
+      size_t i = 0;
+      for (; i < length; i++) {
+          //printf("%c", string[i]);
+          string[i] = string[i] - spblock->key;
+      }
+      strcpy(spblock->datablocks, string );
+      //tmp_block = tmp_block->next_block;
+    }
+
+}
+
+void decode_inode(struct inode **root){
+
+    struct inode *tmp_block = *root;
+
+    while(tmp_block != NULL){
+
+      char* string = spblock->datablocks;
+      size_t length = strlen(string);
+      size_t i = 0;
+      for (; i < length; i++) {
+          //printf("%c", string[i]);    // Print each character of the string.
+          string[i] = string[i] + spblock->key;
+      }
+      strcpy(spblock->datablocks, string );
+      //tmp_block = tmp_block->next_block;
+    }
+
+}*/
+
 
 int main( int argc, char *argv[] ) {
-	FILE *fd = fopen("file_structure.bin", "rb");
+	FILE *fd = fopen("fs_persitance.bin", "rb");
 	if(fd){
-	printf("LOADING\n");
+	printf("Loading filesystem...\n");
 	fread(&file_array, sizeof(filetype)*31, 1, fd);
 
 	int child_startindex = 1;
@@ -721,11 +712,11 @@ int main( int argc, char *argv[] ) {
 
 		root = &file_array[0];
 
-		FILE *fd1 = fopen("super.bin", "rb");
+		FILE *fd1 = fopen("superblock_persistance.bin", "rb");
 		fread(&spblock,sizeof(superblock),1,fd1);
 	}
 	else{
-		printf("new\n");
+
 		initialize_superblock();
 		initialize_root_directory();
 	}
