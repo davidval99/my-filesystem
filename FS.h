@@ -10,8 +10,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-// gcc FS.c -o FS `pkg-config fuse --cflags --libs`
-// ./ FS - f Desktop / OS / mountpoint4
 #define block_size 1024
 
 typedef struct superblock {
@@ -21,20 +19,11 @@ typedef struct superblock {
 	char inode_bitmap[105];   				//array of inode numbers that are available
 } superblock;
 
-typedef struct inode {
-	int datablocks[16];            //data block number that the inode points to
-	int number;
-	int blocks;                    //==number of blocks the particular inode points to
-	//int link;                    //==number of links
-	int size;                      //==size of file/directory
-} inode;
 
 typedef struct filetype {
 	int valid;
-	char test[10];
 	char path[100];
 	char name[100];           //name
-	inode *inum;              //inode number
 	struct filetype ** children;
 	int num_children;
 	int num_links;
@@ -70,8 +59,8 @@ int myrename(const char* from, const char* to);
 int mytruncate(const char *path, off_t size);
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi);
-void encode_inode(struct inode **root);
-void decode_inode(struct inode **root);
+void encode_datablock();
+void decode_datablock();
 void add_child(filetype * parent, filetype * child);
 void initialize_root_directory();
 void initialize_superblock();

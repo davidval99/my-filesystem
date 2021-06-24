@@ -2,8 +2,10 @@
 
 void initialize_superblock(){
 
+	encode_datablock();
 	memset(spblock.data_bitmap, '0', 100*sizeof(char));
 	memset(spblock.inode_bitmap, '0', 100*sizeof(char));
+
 }
 
 void tree_to_array(filetype * queue, int * front, int * rear, int * index){
@@ -56,6 +58,7 @@ void tree_to_array(filetype * queue, int * front, int * rear, int * index){
 
 
 int save_contents(){
+
 	printf("saving...\n");
 	filetype * queue = malloc(sizeof(filetype)*60);
 	int front = 0;
@@ -73,10 +76,13 @@ int save_contents(){
 	FILE * fd1 = fopen("superblock_persistance.bin", "wb");
 
 	fwrite(file_array, sizeof(filetype)*31, 1, fd);
+
+	encode_datablock();
 	fwrite(&spblock,sizeof(superblock),1,fd1);
 
 	fclose(fd);
 	fclose(fd1);
+	decode_datablock();
 	printf("changes saved!\n");
 	printf("\n");
 }
@@ -94,7 +100,7 @@ void initialize_root_directory() {
 	root -> parent = NULL;
 	root -> num_links = 2;
 	root -> valid = 1;
-	strcpy(root->test, "test");
+
 	//root -> type = malloc(10);
 	strcpy(root -> type, "directory");
 
@@ -225,8 +231,6 @@ static int mymkdir(const char *path, mode_t mode) {
 	//new_folder -> path = malloc(strlen(pathname)+2);
 	strcpy(new_folder -> path, pathname);
 
-
-
 	*rindex = '\0';
 
 	if(strlen(pathname) == 0)
@@ -237,7 +241,6 @@ static int mymkdir(const char *path, mode_t mode) {
 	new_folder -> parent = filetype_from_path(pathname);
 	new_folder -> num_links = 2;
 	new_folder -> valid = 1;
-	strcpy(new_folder -> test, "test");
 
 	if(new_folder -> parent == NULL)
 		return -ENOENT;
@@ -651,46 +654,44 @@ static int myflush(struct superblock * block, int offset, int len)
     return 0;
 }
 
-/*void encode_inode(struct inode **root){
+void encode_datablock(){
 
-    struct inode = *root;
-
-    while(spblock != NULL){
-
-      char* string = spblock->datablocks;
+      char* string = spblock.datablocks;
       size_t length = strlen(string);
       size_t i = 0;
       for (; i < length; i++) {
           //printf("%c", string[i]);
-          string[i] = string[i] - spblock->key;
+          string[i] = string[i] - spblock.key;
       }
-      strcpy(spblock->datablocks, string );
+      strcpy(spblock.datablocks, string );
       //tmp_block = tmp_block->next_block;
-    }
 
 }
 
-void decode_inode(struct inode **root){
+void decode_datablock(){
 
-    struct inode *tmp_block = *root;
-
-    while(tmp_block != NULL){
-
-      char* string = spblock->datablocks;
+      char* string = spblock.datablocks;
       size_t length = strlen(string);
       size_t i = 0;
       for (; i < length; i++) {
           //printf("%c", string[i]);    // Print each character of the string.
-          string[i] = string[i] + spblock->key;
+          string[i] = string[i] + spblock.key;
       }
-      strcpy(spblock->datablocks, string );
+      strcpy(spblock.datablocks, string );
       //tmp_block = tmp_block->next_block;
-    }
 
-}*/
+}
 
 
 int main( int argc, char *argv[] ) {
+
+	printf("Insert passphrase: \n ");
+	char passphrase[100];
+	spblock.key = ((unsigned long int)passphrase*1000) % 255;
+	scanf("%s", &passphrase);
+	//printf("%d\n", &key);
+
+
 	FILE *fd = fopen("fs_persitance.bin", "rb");
 	if(fd){
 	printf("Loading filesystem...\n");
@@ -714,6 +715,7 @@ int main( int argc, char *argv[] ) {
 
 		FILE *fd1 = fopen("superblock_persistance.bin", "rb");
 		fread(&spblock,sizeof(superblock),1,fd1);
+		decode_datablock();
 	}
 	else{
 
