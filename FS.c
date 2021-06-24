@@ -1,4 +1,4 @@
-#include "FS.h"
+#include "bwfs.h"
 
 void initialize_superblock(){
 
@@ -670,52 +670,8 @@ int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi){
 	return 0;
 }
 
-static int myflush(struct superblock * block, int offset, int len) {
+static int myflush(struct superblock * block, int offset, size_t size) {
     return 0;
-}
-
-void encode_inode(const char *path){
-
-	char * pathname = malloc(sizeof(path)+1);
-	strcpy(pathname, path);
-
-	filetype * file = filetype_from_path(pathname);
-
-    while(file != NULL){
-
-      char* string = file->blocks;
-      size_t length = strlen(string);
-      size_t i = 0;
-      for (; i < length; i++) {
-          //printf("%c", string[i]);
-          string[i] = string[i] - spblock.key;
-      }
-      strcpy(file->blocks, string );
-     	(file->blocks)++;
-    }
-
-}
-
-void decode_inode(const char *path){
-
-	char * pathname = malloc(sizeof(path)+1);
-	strcpy(pathname, path);
-
-	filetype * file = filetype_from_path(pathname);
-
-		while(file != NULL){
-
-			char* string = file->blocks;
-			size_t length = strlen(string);
-			size_t i = 0;
-			for (; i < length; i++) {
-					//printf("%c", string[i]);
-					string[i] = string[i] + spblock.key;
-			}
-			strcpy(file->blocks, string );
-			(file->blocks)++;
-		}
-
 }
 
 int main( int argc, char *argv[] ) {

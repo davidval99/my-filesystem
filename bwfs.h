@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <mcheck.h>
 
 // gcc FS.c -o FS `pkg-config fuse --cflags --libs`
 // ./ FS - f Desktop / OS / mountpoint4
@@ -55,7 +56,6 @@ typedef struct filetype {
 
 } filetype;
 
-
 int save_contents();
 int find_free_inode();
 int find_free_db();
@@ -101,8 +101,7 @@ static struct fuse_operations operations = {
 	.statfs=mystatfs,
 	.opendir=myopendir,
 	.access=myaccess,
-	.flush=myflush,
+	.fflush=myflush,
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////
