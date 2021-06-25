@@ -56,6 +56,50 @@ void tree_to_array(filetype * queue, int * front, int * rear, int * index){
 
 }
 
+int inode_check(){
+	//Checks that inode_bitmap is not corrupted
+	for(int i=0;i< 100; i++){
+		if(spblock.inode_bitmap[i] == -1){
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int file_array_path_check(){
+	//Check that there is no missing data in file_array
+	for(int i = 0; i < 50; i++){
+		if(file_array[i].path == NULL){
+			return -1;
+		}
+		//printf("path : %s\n", file_array[i].path);
+	}
+	return 0;
+}
+
+int file_array_valid_check(){
+	//Check that there is no missing data in file_array
+	for(int i = 0; i < 50; i++){
+		if(file_array[i].valid != 0 || file_array[i].valid != 1){
+			return -1;
+		}
+		//printf("path : %s\n", file_array[i].path);
+	}
+	return 0;
+}
+
+
+void consistency_check(){
+	if (inode_check()!= 0){
+		printf("\nWarning: Consistency Error" );
+	}
+	if (file_array_path_check()!= 0){
+		printf("\nWarning: Consistency Error" );
+	}
+}
+
+
+
 
 int save_contents(){
 
@@ -78,11 +122,16 @@ int save_contents(){
 	fwrite(file_array, sizeof(filetype)*31, 1, fd);
 
 	encode_datablock();
+
 	fwrite(&spblock,sizeof(superblock),1,fd1);
 
 	fclose(fd);
 	fclose(fd1);
 	decode_datablock();
+	printf("checking consistency...\n");
+	consistency_check();
+
+
 	printf("changes saved!\n");
 	printf("\n");
 }
@@ -716,6 +765,8 @@ int main( int argc, char *argv[] ) {
 		FILE *fd1 = fopen("superblock_persistance.bin", "rb");
 		fread(&spblock,sizeof(superblock),1,fd1);
 		decode_datablock();
+
+
 	}
 	else{
 
