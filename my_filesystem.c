@@ -88,7 +88,6 @@ int file_array_valid_check(){
 	return 0;
 }
 
-
 void consistency_check(){
 	if (inode_check()!= 0){
 		printf("\nWarning: Consistency Error" );
@@ -97,9 +96,6 @@ void consistency_check(){
 		printf("\nWarning: Consistency Error" );
 	}
 }
-
-
-
 
 int save_contents(){
 
@@ -171,9 +167,6 @@ void initialize_root_directory() {
 
 	save_contents();
 }
-
-
-
 
 filetype * filetype_from_path(char * path){
 	char curr_folder[100];
@@ -323,7 +316,6 @@ static int mymkdir(const char *path, mode_t mode) {
 
 }
 
-
 int myreaddir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi ){
 	printf("reading...\n");
 
@@ -348,7 +340,6 @@ int myreaddir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offs
 
 	return 0;
 }
-
 
 static int mygetattr(const char *path, struct stat *statit) {
 	char *pathname;
@@ -485,7 +476,6 @@ int myunlink(const char * path){
 
 }
 
-
 int mycreate(const char * path, mode_t mode, struct fuse_file_info *fi) {
 
 	printf("creating file...\n");
@@ -547,7 +537,6 @@ int mycreate(const char * path, mode_t mode, struct fuse_file_info *fi) {
 	return 0;
 }
 
-
 int myopen(const char *path, struct fuse_file_info *fi) {
 	printf("OPEN\n");
 
@@ -557,6 +546,19 @@ int myopen(const char *path, struct fuse_file_info *fi) {
 	filetype * file = filetype_from_path(pathname);
 
 	return 0;
+}
+
+int myopendir(const char* path, struct fuse_file_info* fi){
+
+	printf("Open DIR %s\n", path);
+
+	char * pathname = malloc(strlen(path)+2);
+	strcpy(pathname, path);
+
+	filetype * folder = filetype_from_path(pathname);
+
+	return 0;
+
 }
 
 int myread(const char *path, char *buf, size_t size, off_t offset,struct fuse_file_info *fi) {
@@ -591,7 +593,6 @@ int myread(const char *path, char *buf, size_t size, off_t offset,struct fuse_fi
 int myaccess(const char * path, int mask){
 	return 0;
 }
-
 
 int myrename(const char* from, const char* to) {
 	printf("renaming: %s\n", from);
@@ -629,20 +630,6 @@ int myrename(const char* from, const char* to) {
 
 	return 0;
 }
-
-/*int myopendir(const char* path, struct fuse_file_info* fi){
-
-	printf("Open DIR %s\n", path);
-
-    struct node* search = NULL;
-	findNodePath(spblock->root, &search, path);
-
-    if (!search->dir) return -ENOTDIR;
-    fi->fh = (uint64_t) (int)path;
-
-    return 0;
-
-}*/
 
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 
@@ -698,9 +685,31 @@ int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi){
 	return 0;
 }
 
-static int myflush(struct superblock * block, int offset, int len)
-{
+static int myflush(struct superblock * block, int offset, int len){
     return 0;
+}
+
+int mystatfs(const char* path, struct statvfs* stbuf){
+
+	printf("Stat of the filesystem \n");
+
+	struct stat fi;
+  	stat("/", &fi);
+
+	stbuf->f_fsid = fi.st_dev;
+	stbuf->f_namemax = 256;
+	stbuf->f_blocks = fi.st_size;
+
+	printf("Stat of the filesystem\n");
+
+	int res;
+
+	res = statvfs(path, stbuf);
+	if (res == -1)
+		return -errno;
+
+
+	return 0;
 }
 
 void encode_datablock(){
@@ -730,7 +739,6 @@ void decode_datablock(){
       //tmp_block = tmp_block->next_block;
 
 }
-
 
 int main( int argc, char *argv[] ) {
 

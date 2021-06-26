@@ -10,33 +10,34 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <mcheck.h>
+#include <errno.h>
 #define block_size 1024
 
 typedef struct superblock {
 	unsigned long int key;
-	char datablocks[block_size*100];		//total number of data blocks
-	char data_bitmap[105];      			//array of data block numbers that are available
-	char inode_bitmap[105];   				//array of inode numbers that are available
+	char datablocks[block_size*100];		//numero total de bloques
+	char data_bitmap[105];      			//array de numero de bloques disponibles
+	char inode_bitmap[105];   				//array de numero de inodos disponibles
 } superblock;
 
 
 typedef struct filetype {
 	int valid;
 	char path[100];
-	char name[100];           //name
+	char name[100];
 	struct filetype ** children;
 	int num_children;
 	int num_links;
 	struct filetype * parent;
 	char type[20];                  //==file extension
-	mode_t permissions;		        // Permissions
+	mode_t permissions;		        // Permisos
 	uid_t user_id;		            // userid
 	gid_t group_id;		            // groupid
-	time_t a_time;                  // Access time
-	time_t m_time;                  // Modified time
+	time_t a_time;                  // tiempo de acceso
+	time_t m_time;                  // tiempo de modificacion
 	time_t c_time;                  // Status change time
-	time_t b_time;                  // Creation time
-	off_t size;                     // Size of the node
+	time_t b_time;                  // tiempo de cracion
+	off_t size;                     // tamaño
 
 	int datablocks[16];
 	int number;
@@ -48,17 +49,19 @@ typedef struct filetype {
 int save_contents();
 int find_free_inode();
 int find_free_db();
+int inode_check();
 int myreaddir(const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi );
 int myrmdir(const char * path);
 int myunlink(const char * path);
 int mycreate(const char * path, mode_t mode, struct fuse_file_info *fi);
 int myopen(const char *path, struct fuse_file_info *fi);
+int myopendir(const char* path, struct fuse_file_info* fi);
 int myread(const char *path, char *buf, size_t size, off_t offset,struct fuse_file_info *fi);
 int myaccess(const char * path, int mask);
 int myrename(const char* from, const char* to);
-int mytruncate(const char *path, off_t size);
 int mywrite(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 int myfsync(const char* path, int isdatasync, struct fuse_file_info* fi);
+int mystatfs(const char* path, struct statvfs* stbuf);
 void encode_datablock();
 void decode_datablock();
 void add_child(filetype * parent, filetype * child);
@@ -69,6 +72,7 @@ filetype * filetype_from_path(char * path);
 static int mygetattr(const char *path, struct stat *statit);
 static int mymkdir(const char *path, mode_t mode);
 static int myflush(struct superblock * block, int offset, int len);
+
 
 superblock spblock;
 filetype * root;
@@ -86,7 +90,7 @@ static struct fuse_operations operations = {
 	.rename=myrename,
 	.unlink=myunlink,
 	.fsync=myfsync,
+	.access=myaccess,
+	.opendir=myopendir,
+	.statfs=mystatfs,
 };
-
-
-////////////////////////////////////////////////////////////////////////////////
