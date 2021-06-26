@@ -591,7 +591,22 @@ int myread(const char *path, char *buf, size_t size, off_t offset,struct fuse_fi
 }
 
 int myaccess(const char * path, int mask){
-	return 0;
+	printf("Accessing > %s \n", path);
+
+	int res;
+
+	char * pathname = malloc(sizeof(path)+1);
+	strcpy(pathname, path);
+
+	filetype * file = filetype_from_path(pathname);
+
+    if(file == NULL) {
+        return -EXIT_FAILURE; /**No existe*/
+    }
+    if(mask == F_OK)
+        return EXIT_SUCCESS;
+
+    return 0;
 }
 
 int myrename(const char* from, const char* to) {
